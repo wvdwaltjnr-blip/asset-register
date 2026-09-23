@@ -1,0 +1,1 @@
+ALTER TABLE `assets` DROP COLUMN `insurance_type`;

@@ -1,0 +1,35 @@
+# systemd service for the Asset Register, deployed alongside the Clock-In
+# System (and Petty Cash Tracker, Uniform Tracker) on the same Lightsail
+# instance. Shares that app's SQLite database (clockin.db) and
+# SESSION_SECRET for single sign-on — see scripts/bootstrap-shared-db.cjs
+# for the one-time schema merge, and deploy/nginx-asset-register.conf for
+# how requests get routed here.
+#
+# Install:
+#   sudo cp deploy/asset-register.service /etc/systemd/system/asset-register.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now asset-register
+#
+# Replace SESSION_SECRET below with the exact same value clockin.service
+# uses (see /etc/systemd/system/clockin.service) — this is what makes a
+# clockin-system login also work here, with no second sign-in.
+
+[Unit]
+Description=Asset Register
+After=network.target clockin.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/asset-register
+ExecStart=/usr/bin/npm run start -- -p 3003
+Restart=always
+RestartSec=5
+User=ubuntu
+Environment=NODE_ENV=production
+Environment=PORT=3003
+Environment=NEXT_BASE_PATH=/assetregister
+Environment=DATABASE_URL=file:/home/ubuntu/clockin-system/data/clockin.db
+Environment=SESSION_SECRET=REPLACE_WITH_CLOCKIN_SERVICES_SESSION_SECRET
+
+[Install]
+WantedBy=multi-user.target
